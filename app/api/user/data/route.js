@@ -4,21 +4,58 @@ import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 
+// export async function GET(request) {
+//     try {
+//         const {userId} = getAuth(request)
+
+//         await connectDB()
+//         const user = await User.findById(userId)
+
+//         if (!user) {
+//             return NextResponse.json({success: false, message: "User Not Found"})
+//         }
+
+//         return NextResponse.json({success:true, user})
+
+//     } catch (error) {
+//         return NextResponse.json({success: false, message:error.message})
+//     }
+// }
+
 export async function GET(request) {
     try {
         const {userId} = getAuth(request)
+        
+        if (!userId) {
+            return NextResponse.json({success: false, message: "Not authenticated"}, { status: 401 })
+        }
 
         await connectDB()
-        const user = await User.findById(userId)
+        
+        // Try finding by _id first
+        let user = await User.findById(userId)
+        
+        // If not found, try finding by clerkId as well
+        if (!user) {
+            user = await User.findOne({ clerkId: userId })
+        }
+        
+        // If still not found, try finding by email as a last resort
+        if (!user && request.user?.emailAddresses?.length > 0) {
+            const userEmail = request.user.emailAddresses[0].emailAddress
+            user = await User.findOne({ email: userEmail })
+        }
 
         if (!user) {
+            console.log("User not found for ID:", userId)
             return NextResponse.json({success: false, message: "User Not Found"})
         }
 
-        return NextResponse.json({success:true, user})
+        return NextResponse.json({success: true, user})
 
     } catch (error) {
-        return NextResponse.json({success: false, message:error.message})
+        console.error('Error fetching user:', error)
+        return NextResponse.json({success: false, message: error.message})
     }
 }
 

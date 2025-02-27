@@ -7,22 +7,52 @@ import Order from "@/models/Order";
 export const inngest = new Inngest({ id: "quickcart-next" });
 
 //inngest function to save user data to a databsase
+// export const syncUserCreation = inngest.createFunction(
+//     {
+//         id:'sync-user-from-clerk'
+//     },
+//     {event: 'clerk/user.created'},
+//     async ({event}) => {
+//         const {id, first_name, last_name, email_addresses, image_url} = event.data
+//         const userData = {
+//             _id:id,
+//             clerkId: id, // Add this line
+//             email: email_addresses[0].email_address,
+//             name: first_name + ' ' + last_name,
+//             imageUrl:image_url
+//         }
+//         await connectDB()
+//         await User.create(userData)
+//     }
+// )
+
 export const syncUserCreation = inngest.createFunction(
     {
-        id:'sync-user-from-clerk'
+        id: 'sync-user-from-clerk'
     },
-    {event: 'clerk/user.created'},
-    async ({event}) => {
-        const {id, first_name, last_name, email_addresses, image_url} = event.data
+    { event: 'clerk/user.created' },
+    async ({ event }) => {
+        console.log("Clerk user creation event received:", event.data.id);
+        
+        const { id, first_name, last_name, email_addresses, image_url } = event.data
         const userData = {
-            _id:id,
-            clerkId: id, // Add this line
+            _id: id,
+            clerkId: id,
             email: email_addresses[0].email_address,
-            name: first_name + ' ' + last_name,
-            imageUrl:image_url
+            name: first_name ? (first_name + ' ' + (last_name || '')) : "New User",
+            imageUrl: image_url || "https://placeholder.com/user"
         }
+        
         await connectDB()
-        await User.create(userData)
+        
+        try {
+            const newUser = await User.create(userData)
+            console.log("User created successfully with ID:", newUser._id);
+            return { success: true, userId: newUser._id };
+        } catch (error) {
+            console.error("Error creating user:", error.message);
+            throw error;
+        }
     }
 )
 
