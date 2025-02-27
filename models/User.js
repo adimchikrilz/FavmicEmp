@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     _id: { type:String, required:true },
+    clerkId: { type: String, sparse: true, unique: true },// Add this line
     name: { type:String, required:true },
     email: { type:String, required:true, unique:true },
     imageUrl: { type:String, required:true },
