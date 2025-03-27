@@ -10,9 +10,9 @@ export async function POST(request) {
         const body = await request.text()
         const sig = request.headers.get('stripe-signature')
 
-        const event = stripe.webhooks.constructEvent(body,sig,process.env.STRIPE_WEBHOOK_SECRET)
+        const event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
 
-        const handlePaymentIntent = async (paymentIntentId,isPaid)=> {
+        const handlePaymentIntent = async (paymentIntentId, isPaid)=> {
             const session = await stripe.checkout.sessions.list({
                 payment_intent:paymentIntentId
             })
@@ -21,8 +21,8 @@ export async function POST(request) {
             await connectDB()
 
             if (isPaid) {
-                await Order.findByIdAndUpdate(orderId,{isPaid:true})
-                await User.findByIdAndUpdate(userId,{cartItem:{}})
+                await Order.findByIdAndUpdate(orderId, {isPaid:true})
+                await User.findByIdAndUpdate(userId, {cartItem:{}})
             } else {
                 await Order.findByIdAndDelete(orderId)
             }
